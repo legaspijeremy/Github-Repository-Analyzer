@@ -12,6 +12,8 @@ from analyzer.repo_metrics import (
     get_file_tree
 )
 
+from analyzer.code_quality import analyze_code_quality
+
 url = input("Repository URL: ")
 
 # Fetch repository
@@ -58,7 +60,7 @@ for key, value in repo_metrics.items():
 # Documentation Score
 # ----------------------------
 
-print(f"\nDocumentation Score: {score}/100")
+print(f"\nDocumentation Quality Score: {score}/100")
 
 # ----------------------------
 # Documentation Analysis
@@ -70,6 +72,20 @@ print("-" * 30)
 for item, passed in checks.items():
     status = "✓" if passed else "✗"
     print(f"{status} {item}")
+
+# ----------------------------
+# Code Quality Metrics
+# ----------------------------
+print("\nAnalyzing code quality...")
+quality = analyze_code_quality(repo)
+
+print("\n=== Code Quality Analysis ===")
+print(f"Python Files: {quality['python_files']}")
+print(f"Lines of Code: {quality['total_loc']}")
+print(f"Average Function Length: {quality['avg_function_length']}")
+print(f"Average Class Size: {quality['avg_class_size']}")
+print(f"Cyclomatic Complexity: {quality['avg_complexity']}")
+print(f"Maintainability Index: {quality['avg_maintainability']}")
 
 # ----------------------------
 # Documentation Metrics
