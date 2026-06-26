@@ -23,6 +23,8 @@ from analyzer.complexity_score import (
     classify_project
 )
 
+from analyzer.ai_summary import generate_ai_summary
+
 url = input("Repository URL: ")
 
 # ----------------------------
@@ -169,7 +171,7 @@ classification = classify_project(complexity_score)
 
 print(f"[TIME] Complexity Score: {time.time() - start:.2f}s")
 
-print("\nProject Complexity")
+print("\nProject Complexity Score")
 print("-" * 30)
 print(f"Complexity Score: {complexity_score}/100")
 print(f"Complexity Level: {classification}")
@@ -216,6 +218,33 @@ else:
 print("\nSummary")
 print("-" * 30)
 print(summary)
+
+# ----------------------------
+# AI Project Summary
+# ----------------------------
+
+start = time.time()
+
+print("\nGenerating AI Project Summary...")
+
+ai_summary = generate_ai_summary(
+    repo_name=repo.name,
+    description=repo.description,
+    readme=readme,
+    repo_metrics=repo_metrics,
+    documentation_score=score,
+    documentation_metrics=metrics,
+    code_quality=quality,
+    complexity_score=complexity_score,
+    total_files=total_files,
+    total_python_files=total_python_files,
+)
+
+print(f"[TIME] AI Summary: {time.time() - start:.2f}s")
+
+print("\nAI Project Summary")
+print("-" * 30)
+print(ai_summary)
 
 # ----------------------------
 # Documentation Metrics
