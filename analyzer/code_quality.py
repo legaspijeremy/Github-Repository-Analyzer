@@ -1,9 +1,19 @@
 import ast
+from importlib.resources import files
 
 from radon import complexity
 from radon.complexity import cc_visit
 from radon.metrics import mi_visit
 
+from concurrent.futures import ThreadPoolExecutor
+
+SKIP_ANALYSIS_DIRS = {
+    "tests",
+    "test",
+    "docs",
+    "examples",
+    "__pycache__",
+}
 
 def get_python_files(repo):
     """
@@ -106,13 +116,60 @@ def analyze_maintainability(code):
         return 0
 
 
-def analyze_code_quality(repo):
+def analyze_python_file(file):
+
+    try:
+        content = file.decoded_content.decode(
+            "utf-8",
+            errors="ignore"
+        )
+
+        total_loc = count_loc(content)
+
+        funcs, classes = analyze_structure(content)
+
+        complexity = analyze_complexity(content)
+
+        maintainability = analyze_maintainability(content)
+
+        return {
+            "loc": total_loc,
+            "functions": funcs,
+            "classes": classes,
+            "complexity": complexity,
+            "maintainability": maintainability
+        }
+
+    except Exception:
+        return None
+
+def analyze_code_quality(files, repo):
     
     print("[INFO] Searching for Python files...")
 
-    python_files = get_python_files(repo)
+    python_files = []
 
-    print(f"[INFO] Found {len(python_files)} Python files.")
+    for path in files:
+
+        if not path.endswith(".py"):
+            continue
+
+        parts = path.split("/")
+
+        if any(part in SKIP_ANALYSIS_DIRS for part in parts):
+            continue
+
+        try:
+            python_files.append(
+                repo.get_contents(path)
+            )
+
+        except Exception:
+            continue
+
+    print(
+    f"[INFO] Found {len(python_files)} production Python files."
+    )
     print("[INFO] Calculating lines of code...")
 
     total_loc = 0
@@ -121,30 +178,37 @@ def analyze_code_quality(repo):
     complexities = []
     maintainability_scores = []
 
-    for file in python_files:
-        try:
-            content = file.decoded_content.decode(
-                "utf-8",
-                errors="ignore"
+    with ThreadPoolExecutor(max_workers=8) as executor:
+
+        results = executor.map(
+        analyze_python_file,
+        python_files
+    )
+
+    for result in results:
+
+        if result is None:
+            continue
+
+        total_loc += result["loc"]
+
+        function_lengths.extend(
+            result["functions"]
+        )
+
+        class_sizes.extend(
+            result["classes"]
+        )
+
+        if result["complexity"] > 0:
+            complexities.append(
+                result["complexity"]
             )
 
-            total_loc += count_loc(content)
-            funcs, classes = analyze_structure(content)
-
-            function_lengths.extend(funcs)
-            class_sizes.extend(classes)
-            complexity = analyze_complexity(content)
-
-            if complexity > 0:
-                complexities.append(complexity)
-
-            maintainability = analyze_maintainability(content)
-
-            if maintainability > 0:
-                maintainability_scores.append(maintainability) 
-        
-        except Exception:
-            continue
+        if result["maintainability"] > 0:
+            maintainability_scores.append(
+                result["maintainability"]
+            )
 
     print("[INFO] Code quality analysis completed.")
 

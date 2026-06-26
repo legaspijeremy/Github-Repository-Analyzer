@@ -1,55 +1,67 @@
 def calculate_complexity_score(
     documentation_score,
-    python_files,
-    total_loc,
-    avg_complexity,
-    maintainability
+    total_files,
+    total_python_files,
+    contributors
 ):
-    
     score = 0
 
-    # Documentation (20 points)
-    score += min(documentation_score, 100) * 0.20
+    # ----------------------------
+    # Documentation (10 points)
+    # ----------------------------
 
-    # Repository Scale (30 points)
+    score += min(documentation_score / 10, 10)
 
-    if python_files >= 100:
-        score += 15
-    elif python_files >= 50:
-        score += 10
-    elif python_files >= 20:
-        score += 5
+    # ----------------------------
+    # Total Files (40 points)
+    # ----------------------------
 
-    if total_loc >= 20000:
-        score += 15
-    elif total_loc >= 10000:
-        score += 10
-    elif total_loc >= 5000:
-        score += 5
-
-    # Complexity (20 points)
-
-    if avg_complexity <= 3:
+    if total_files >= 300:
+        score += 40
+    elif total_files >= 150:
+        score += 30
+    elif total_files >= 50:
         score += 20
-    elif avg_complexity <= 6:
+    else:
+        score += 10
+
+    # ----------------------------
+    # Python Files (30 points)
+    # ----------------------------
+
+    if total_python_files >= 100:
+        score += 30
+    elif total_python_files >= 50:
+        score += 25
+    elif total_python_files >= 20:
+        score += 20
+    elif total_python_files >= 10:
         score += 15
-    elif avg_complexity <= 10:
+    else:
+        score += 10
+
+    # ----------------------------
+    # Contributors (20 points)
+    # ----------------------------
+
+    if contributors >= 100:
+        score += 20
+    elif contributors >= 20:
+        score += 15
+    elif contributors >= 5:
         score += 10
     else:
         score += 5
 
-    # Maintainability (30 points)
-
-    score += min(maintainability, 100) * 0.30
-
     return round(score)
+
 
 def classify_project(score):
 
-    if score >= 90:
+    if score >= 85:
         return "Very Complex"
 
-    elif score >= 70:
+    elif score >= 65:
         return "Complex"
 
     elif score >= 35:

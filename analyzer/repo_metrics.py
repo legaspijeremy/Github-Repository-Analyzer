@@ -19,34 +19,41 @@ def get_repository_metrics(repo):
         "open_issues": repo.open_issues_count,
     }
 
+def get_file_tree(repo):
+    """
+    Retrieve the complete repository file tree
+    using GitHub's Git Tree API.
+    """
 
-def get_file_tree(repo, path=""):
+    print("Fetching repository tree...")
 
     files = []
 
-    print(f"Scanning: {path or '/'}")
-
     try:
-        contents = repo.get_contents(path)
 
-        for item in contents:
+        tree = repo.get_git_tree(
+            repo.default_branch,
+            recursive=True
+        )
 
-            if item.type == "file":
-                files.append(item.path)
+        for item in tree.tree:
 
-            elif item.type == "dir":
+            # Ignore directories
+            if item.type != "blob":
+                continue
 
-                if item.name in SKIP_DIRS:
-                    continue
+            # Skip ignored folders
+            parts = item.path.split("/")
 
-                files.extend(
-                    get_file_tree(
-                        repo,
-                        item.path
-                    )
-                )
+            if any(
+                part in SKIP_DIRS
+                for part in parts
+            ):
+                continue
+
+            files.append(item.path)
 
     except Exception as e:
-        print(f"Error scanning {path}: {e}")
+        print(f"Error fetching repository tree: {e}")
 
     return files

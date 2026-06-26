@@ -25,24 +25,57 @@ from analyzer.complexity_score import (
 
 url = input("Repository URL: ")
 
-# Fetch repository
-repo = get_repo(url)
+# ----------------------------
+# Fetch Repository
+# ----------------------------
 
-# Repository metrics
+start = time.time()
+repo = get_repo(url)
+print(f"[TIME] Fetch Repository: {time.time() - start:.2f}s")
+
+# ----------------------------
+# Repository Metrics
+# ----------------------------
+
+start = time.time()
+
 print("Fetching repository metrics...")
 repo_metrics = get_repository_metrics(repo)
 
-# File tree
+print(f"[TIME] Repository Metrics: {time.time() - start:.2f}s")
+
+# ----------------------------
+# File Tree
+# ----------------------------
+
+start = time.time()
+
 print("Fetching file tree...")
 files = get_file_tree(repo)
 
+print(f"[TIME] File Tree: {time.time() - start:.2f}s")
+
+# ----------------------------
 # README
+# ----------------------------
+
+start = time.time()
+
 print("Fetching README...")
 readme = get_readme(repo)
 
+print(f"[TIME] README: {time.time() - start:.2f}s")
+
+# ----------------------------
+# Documentation Analysis
+# ----------------------------
+
+start = time.time()
+
 print("Analyzing documentation...")
-# Documentation analysis
 score, checks, metrics = score_documentation(readme)
+
+print(f"[TIME] Documentation Analysis: {time.time() - start:.2f}s")
 
 # ----------------------------
 # Repository Information
@@ -83,10 +116,15 @@ for item, passed in checks.items():
     print(f"{status} {item}")
 
 # ----------------------------
-# Code Quality Metrics
+# Code Quality Analysis
 # ----------------------------
+
+start = time.time()
+
 print("\nAnalyzing code quality...")
-quality = analyze_code_quality(repo)
+quality = analyze_code_quality(files, repo)
+
+print(f"[TIME] Code Quality Analysis: {time.time() - start:.2f}s")
 
 print("\nCode Quality Analysis")
 print("-" * 30)
@@ -97,46 +135,83 @@ print(f"Average Class Size: {quality['avg_class_size']}")
 print(f"Cyclomatic Complexity: {quality['avg_complexity']}")
 print(f"Maintainability Index: {quality['avg_maintainability']}")
 
-# ----------------------------
-# Complexity Score
-# ----------------------------
-complexity_score = calculate_complexity_score(
-    documentation_score=score,
-    python_files=quality["python_files"],
-    total_loc=quality["total_loc"],
-    avg_complexity=quality["avg_complexity"],
-    maintainability=quality["avg_maintainability"]
+all_python_files = len(
+    [f for f in files if f.endswith(".py")]
 )
 
-classification = classify_project(
-    complexity_score
+print(f"Production Python Files: {quality['python_files']}")
+print(f"Total Python Files: {all_python_files}")
+
+# ----------------------------
+# Project Complexity
+# ----------------------------
+
+start = time.time()
+
+total_files = len(files)
+
+total_python_files = len(
+    [
+        file
+        for file in files
+        if file.endswith(".py")
+    ]
 )
+
+complexity_score = calculate_complexity_score(
+    documentation_score=score,
+    total_files=total_files,
+    total_python_files=total_python_files,
+    contributors=repo_metrics["contributors"]
+)
+
+classification = classify_project(complexity_score)
+
+print(f"[TIME] Complexity Score: {time.time() - start:.2f}s")
 
 print("\nProject Complexity")
 print("-" * 30)
 print(f"Complexity Score: {complexity_score}/100")
 print(f"Complexity Level: {classification}")
 
-#Complexity Factors
+# ----------------------------
+# Complexity Factors
+# ----------------------------
 
 print("\nComplexity Factors")
 print("-" * 30)
 
-print(f"Python Files : {quality['python_files']}")
-print(f"Lines of Code: {quality['total_loc']}")
-print(f"Contributors : {repo_metrics['contributors']}")
+print(f"Total Files         : {total_files}")
+print(f"Total Python Files  : {total_python_files}")
+print(f"Contributors        : {repo_metrics['contributors']}")
+print(f"Documentation Score : {score}/100")
+
+# ----------------------------
+# Summary
+# ----------------------------
 
 if classification == "Very Complex":
-    summary = "Large-scale repository with extensive implementation."
+    summary = (
+        "Large-scale repository with a substantial codebase "
+        "and broad project scope."
+    )
 
 elif classification == "Complex":
-    summary = "Well-developed project with significant implementation."
+    summary = (
+        "Well-developed repository with significant size "
+        "and engineering effort."
+    )
 
 elif classification == "Medium":
-    summary = "Moderately sized project with balanced complexity."
+    summary = (
+        "Moderately sized repository suitable for "
+        "medium-scale software projects."
+    )
 
 else:
-    summary = "Small repository with limited implementation."
+    summary = (
+        "Small repository with a focused codebase."
+    )
 
 print("\nSummary")
 print("-" * 30)
@@ -172,6 +247,7 @@ print("\nSample Files:")
 
 for file in files[:10]:
     print(file)
+
 # ----------------------------
 # README Preview
 # ----------------------------
@@ -180,6 +256,10 @@ print("\nREADME Preview")
 print("-" * 30)
 
 print(readme[:300])
+
+# ----------------------------
+# Total Time
+# ----------------------------
 
 elapsed = time.time() - start_time
 
